@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA | The Future of Consensus</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        deep: '#030014', // Darker space background
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 3s infinite',
+                        'float-slow': 'float 8s ease-in-out infinite',
+                        'blob': 'blob 7s infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+                            '50%': { opacity: '1', transform: 'scale(1.05)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '100%': { backgroundPosition: '100% 50%' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #030014;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background Blobs */
+        .blob-cont {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -5;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: blob 10s infinite alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: #7c3aed;
+        }
+
+        /* Violet */
+        .blob-2 {
+            top: 40%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: #db2777;
+            animation-delay: 2s;
+        }
+
+        /* Pink */
+        .blob-3 {
+            bottom: -10%;
+            left: 20%;
+            width: 600px;
+            height: 600px;
+            background: #0891b2;
+            animation-delay: 4s;
+        }
+
+        /* Cyan */
+
+        /* Enhanced Glassmorphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 40px -10px rgba(168, 85, 247, 0.3);
+            /* Purple Glow */
+        }
+
+        /* Dynamic Text Gradient */
+        .text-gradient {
+            background: linear-gradient(to right, #c084fc, #e879f9, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: shimmer 5s linear infinite;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, #7c3aed, #db2777);
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+
+        .btn-gradient:hover {
+            background-position: right center;
+            box-shadow: 0 0 20px rgba(219, 39, 119, 0.5);
+        }
+
+        #nova-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        .feature-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+        }
+
+        .feature-list li::before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: #d946ef;
+            /* Fuschia */
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-fuchsia-500 selection:text-white">
+
+    <!-- PRELOADER -->
+    <div id="preloader"
+        class="fixed inset-0 bg-[#030014] z-[9999] flex justify-center items-center transition-opacity duration-700">
+        <div class="relative flex flex-col items-center">
+            <div class="w-24 h-24 border-t-4 border-l-4 border-fuchsia-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-4 h-4 bg-white rounded-full animate-pulse-glow shadow-[0_0_20px_#d946ef]"></div>
+            </div>
+            <h1 class="mt-8 font-display text-2xl tracking-[0.5em] font-bold text-white animate-pulse">NOVA</h1>
+        </div>
+    </div>
+
+    <!-- BACKGROUND ELEMENTS -->
+    <canvas id="nova-canvas"></canvas>
+    <div class="blob-cont">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="fixed w-full z-50 transition-all duration-300 py-6" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-2 group cursor-pointer" onclick="window.scrollTo(0,0)">
+                <div
+                    class="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center transform group-hover:rotate-12 transition-transform shadow-lg shadow-purple-500/30">
+                    <i class="fa-solid fa-atom text-white text-sm"></i>
+                </div>
+                <span class="font-display font-bold text-xl tracking-wide text-white">NOVA</span>
+            </div>
+            <div class="hidden md:flex gap-8 text-sm font-medium text-slate-300">
+                <a href="#systems" class="hover:text-white hover:text-fuchsia-400 transition-colors">Ecosystems</a>
+                <a href="#how-it-works" class="hover:text-white hover:text-cyan-400 transition-colors">Technology</a>
+            </div>
+            <button onclick="document.getElementById('systems').scrollIntoView({behavior: 'smooth'})"
+                class="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-2 rounded-full text-sm font-medium transition-all backdrop-blur-md hover:border-fuchsia-500/50 hover:shadow-[0_0_15px_rgba(217,70,239,0.3)]">
+                Launch System
+            </button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="relative min-h-screen flex items-center justify-center pt-20">
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <div
+                class="inline-block mb-6 px-4 py-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 backdrop-blur-md animate-float-slow">
+                <span class="text-fuchsia-300 text-xs font-bold tracking-widest uppercase"><i
+                        class="fa-solid fa-shield-halved mr-2"></i>Decentralized • Anonymous • Secure</span>
+            </div>
+            <h1 class="font-display text-6xl md:text-8xl font-bold mb-8 leading-tight text-white drop-shadow-2xl">
+                Vote with <br>
+                <span class="text-gradient">Absolute Power.</span>
+            </h1>
+            <p class="text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+                The world's first multi-tier voting ecosystem powered by Zero-Knowledge Proofs and Immutable
+                JSON-Chains.
+            </p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <a href="#systems"
+                    class="group relative px-8 py-4 btn-gradient text-white font-bold rounded-full overflow-hidden shadow-lg">
+                    <span class="relative z-10">Explore Ecosystems <i class="fa-solid fa-arrow-down ml-2"></i></span>
+                </a>
+                <a href="#how-it-works"
+                    class="px-8 py-4 border border-white/20 hover:bg-white/5 rounded-full text-white transition-colors backdrop-blur-sm">
+                    Learn More
+                </a>
+            </div>
+        </div>
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-50">
+            <i class="fa-solid fa-chevron-down text-white"></i>
+        </div>
+    </header>
+
+    <!-- 1. ECOSYSTEMS LIST -->
+    <section id="systems" class="py-24 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-4xl md:text-5xl font-bold mb-4 text-white">Select Your Architecture</h2>
+                <div class="h-1 w-20 bg-gradient-to-r from-violet-500 to-fuchsia-500 mx-auto rounded-full"></div>
+                <p class="text-slate-400 mt-4">Navigate to the detailed module for your governance needs.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Education Card -->
+                <a href="#edu-detail"
+                    class="glass-card rounded-2xl p-6 group relative overflow-hidden block text-center">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white flex items-center justify-center mb-6 mx-auto shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-2 text-white">Education</h3>
+                    <p class="text-slate-400 text-sm mb-4">Schools & Universities.</p>
+                    <div class="text-cyan-400 text-xs font-bold uppercase tracking-wider group-hover:text-cyan-300">View
+                        Details &rarr;</div>
+                </a>
+
+                <!-- Political Card -->
+                <a href="#pol-detail"
+                    class="glass-card rounded-2xl p-6 group relative overflow-hidden block text-center">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-600 to-amber-500 text-white flex items-center justify-center mb-6 mx-auto shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-landmark text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-2 text-white">Political</h3>
+                    <p class="text-slate-400 text-sm mb-4">Government Elections.</p>
+                    <div class="text-orange-400 text-xs font-bold uppercase tracking-wider group-hover:text-orange-300">
+                        View Details &rarr;</div>
+                </a>
+
+                <!-- Corporate Card -->
+                <a href="#cor-detail"
+                    class="glass-card rounded-2xl p-6 group relative overflow-hidden block text-center">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white flex items-center justify-center mb-6 mx-auto shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-building text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-2 text-white">Corporate</h3>
+                    <p class="text-slate-400 text-sm mb-4">Board & Employees.</p>
+                    <div
+                        class="text-fuchsia-400 text-xs font-bold uppercase tracking-wider group-hover:text-fuchsia-300">
+                        View Details &rarr;</div>
+                </a>
+
+                <!-- Association Card -->
+                <a href="#soc-detail"
+                    class="glass-card rounded-2xl p-6 group relative overflow-hidden block text-center">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 text-white flex items-center justify-center mb-6 mx-auto shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-users text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-2 text-white">Association</h3>
+                    <p class="text-slate-400 text-sm mb-4">Societies & Clubs.</p>
+                    <div
+                        class="text-emerald-400 text-xs font-bold uppercase tracking-wider group-hover:text-emerald-300">
+                        View Details &rarr;</div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. DETAILED SECTIONS -->
+
+    <!-- EDUCATION DETAIL -->
+    <section id="edu-detail" class="py-24 relative border-t border-white/5 bg-white/5 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="order-2 md:order-1">
+                <div
+                    class="inline-block px-3 py-1 mb-4 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                    NOVA EDEN
+                </div>
+                <h2
+                    class="font-display text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                    Educational Platform</h2>
+                <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                    Designed for schools and universities to conduct student council elections with high engagement.
+                    Combines digital registration with physical booth experiences to teach students about democracy.
+                </p>
+                <ul class="feature-list mb-8">
+                    <li>Digital UViD (Unique Voter ID) Generation</li>
+                    <li>Gamified Student Dashboards</li>
+                    <li>QR-Based Physical Booth Authentication</li>
+                    <li>Live Result Streaming</li>
+                </ul>
+                <a href="https://team-ielect.github.io/eden-desk/" target="_blank"
+                    class="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transform hover:-translate-y-1">
+                    <i class="fa-solid fa-rocket mr-2"></i> Launch Education System
+                </a>
+            </div>
+            <div class="order-1 md:order-2 flex justify-center">
+                <div
+                    class="relative w-full max-w-md aspect-square rounded-full border border-blue-500/20 bg-blue-500/5 flex items-center justify-center animate-float-slow backdrop-blur-md">
+                    <div class="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full"></div>
+                    <i
+                        class="fa-solid fa-graduation-cap text-9xl text-blue-400 drop-shadow-[0_0_25px_rgba(96,165,250,0.6)]"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- POLITICAL DETAIL -->
+    <section id="pol-detail" class="py-24 relative border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="flex justify-center">
+                <div
+                    class="relative w-full max-w-md aspect-square rounded-full border border-orange-500/20 bg-orange-500/5 flex items-center justify-center animate-float-slow backdrop-blur-md">
+                    <div class="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full"></div>
+                    <i
+                        class="fa-solid fa-landmark text-9xl text-orange-400 drop-shadow-[0_0_25px_rgba(251,146,60,0.6)]"></i>
+                </div>
+            </div>
+            <div>
+                <div
+                    class="inline-block px-3 py-1 mb-4 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">
+                    NOVA CIVIX
+                </div>
+                <h2
+                    class="font-display text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">
+                    Political Governance</h2>
+                <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                    The fortress of the Nova ecosystem. Built for municipal and national elections where security is
+                    paramount.
+                    Features a Two-Officer Verification protocol and air-gapped voting terminals.
+                </p>
+                <ul class="feature-list mb-8">
+                    <li>Zero-Knowledge Proof Identity Tokens</li>
+                    <li>Biometric & Physical ID Verification</li>
+                    <li>Isolated Voting Terminals (No Internet)</li>
+                    <li>Publicly Auditable JSON-Chain Ledger</li>
+                </ul>
+                <a href="https://team-ielect.github.io/civix/" target="_blank"
+                    class="inline-flex items-center justify-center px-8 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transform hover:-translate-y-1">
+                    <i class="fa-solid fa-rocket mr-2"></i> Launch Political System
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CORPORATE DETAIL -->
+    <section id="cor-detail" class="py-24 relative border-t border-white/5 bg-white/5 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="order-2 md:order-1">
+                <div
+                    class="inline-block px-3 py-1 mb-4 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/30 text-fuchsia-400 text-xs font-bold uppercase tracking-wider">
+                    NOVA SYNTHEX
+                </div>
+                <h2
+                    class="font-display text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-300">
+                    Corporate Solutions</h2>
+                <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                    Secure decision making for boards and employees. Enable whistleblowing and honest feedback through
+                    absolute anonymity, ensuring no retaliation for opinions.
+                </p>
+                <ul class="feature-list mb-8">
+                    <li>Strict Corporate Email SSO</li>
+                    <li>Weighted Voting Rights (Shareholder logic)</li>
+                    <li>Anonymous "Whistleblower" Feedback Box</li>
+                    <li>Real-time Sentiment Analytics</li>
+                </ul>
+                <a href="https://alanbose-dev.github.io/NOVA-SYNTHEX/" target="_blank"
+                    class="inline-flex items-center justify-center px-8 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transform hover:-translate-y-1">
+                    <i class="fa-solid fa-rocket mr-2"></i> Launch Corporate System
+                </a>
+            </div>
+            <div class="order-1 md:order-2 flex justify-center">
+                <div
+                    class="relative w-full max-w-md aspect-square rounded-full border border-fuchsia-500/20 bg-fuchsia-500/5 flex items-center justify-center animate-float-slow backdrop-blur-md">
+                    <div class="absolute inset-0 bg-fuchsia-500/10 blur-3xl rounded-full"></div>
+                    <i
+                        class="fa-solid fa-building text-9xl text-fuchsia-400 drop-shadow-[0_0_25px_rgba(232,121,249,0.6)]"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ASSOCIATION DETAIL -->
+    <section id="soc-detail" class="py-24 relative border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="flex justify-center">
+                <div
+                    class="relative w-full max-w-md aspect-square rounded-full border border-emerald-500/20 bg-emerald-500/5 flex items-center justify-center animate-float-slow backdrop-blur-md">
+                    <div class="absolute inset-0 bg-emerald-500/10 blur-3xl rounded-full"></div>
+                    <i
+                        class="fa-solid fa-users text-9xl text-emerald-400 drop-shadow-[0_0_25px_rgba(52,211,153,0.6)]"></i>
+                </div>
+            </div>
+            <div>
+                <div
+                    class="inline-block px-3 py-1 mb-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                    NOVA TRIBUNE
+                </div>
+                <h2
+                    class="font-display text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                    Associations & Clubs</h2>
+                <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                    Flexible voting for Housing Societies, NGOs, and Sports Clubs. Handles complex scenarios like
+                    proxy voting and hybrid (remote + physical) attendance.
+                </p>
+                <ul class="feature-list mb-8">
+                    <li>Proxy Vote Delegation</li>
+                    <li>Hybrid Polling (On-site + Remote)</li>
+                    <li>Panel Selection Logic</li>
+                    <li>Membership Fee Validation</li>
+                </ul>
+                <a href="https://team-ielect.github.io/tribune/" target="_blank"
+                    class="inline-flex items-center justify-center px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transform hover:-translate-y-1">
+                    <i class="fa-solid fa-rocket mr-2"></i> Launch Association System
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TECHNOLOGY / HOW IT WORKS (Moved to Bottom) -->
+    <section id="how-it-works" class="py-24 relative border-t border-white/5 bg-deep">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-3xl md:text-4xl font-bold mb-4 text-white">Core Technology</h2>
+                <p class="text-slate-400">The cryptographic engines powering the Nova Network.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div
+                        class="w-12 h-12 bg-cyan-500/10 text-cyan-400 rounded-xl flex items-center justify-center mb-6 text-2xl border border-cyan-500/20">
+                        <i class="fa-solid fa-fingerprint"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-3 text-white">Zero-Knowledge Proof</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        We verify *that* you can vote, without knowing *who* you are. Your identity is cryptographically
+                        detached from your ballot.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div
+                        class="w-12 h-12 bg-fuchsia-500/10 text-fuchsia-400 rounded-xl flex items-center justify-center mb-6 text-2xl border border-fuchsia-500/20">
+                        <i class="fa-solid fa-link"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-3 text-white">Immutable Chain</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Every vote is salt-hashed and linked to the previous one. Modifying a past record breaks the
+                        entire chain, ensuring 100% integrity.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div
+                        class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-6 text-2xl border border-emerald-500/20">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold mb-3 text-white">Decentralized Storage</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Data is sharded and stored across multiple nodes (simulated via Firebase Clusters), preventing a
+                        single point of failure.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-white/5 bg-[#02010a] py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-atom text-fuchsia-500"></i>
+                <span class="font-display font-bold text-lg tracking-wide text-white">NOVA</span>
+            </div>
+            <div class="text-slate-500 text-sm text-center md:text-left">
+                &copy; 2025 Nova Systems. All rights reserved. <br>
+                <span class="text-xs opacity-50">Secured by FireChain Technology.</span>
+            </div>
+            <div class="flex gap-4">
+                <a href="#"
+                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-fuchsia-600 hover:text-white transition-all"><i
+                        class="fa-brands fa-github"></i></a>
+                <a href="#"
+                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-cyan-500 hover:text-white transition-all"><i
+                        class="fa-brands fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE BACKGROUND LOGIC -->
+    <script>
+        // 1. PRELOADER
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 800);
+            }, 1000);
+        });
+
+        // 2. NAVBAR SCROLL EFFECT
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('bg-[#030014]/90', 'backdrop-blur-xl', 'shadow-2xl', 'border-b', 'border-white/5');
+                nav.classList.remove('py-6');
+                nav.classList.add('py-4');
+            } else {
+                nav.classList.remove('bg-[#030014]/90', 'backdrop-blur-xl', 'shadow-2xl', 'border-b', 'border-white/5');
+                nav.classList.add('py-6');
+                nav.classList.remove('py-4');
+            }
+        });
+
+        // 3. CANVAS PARTICLE SYSTEM
+        const canvas = document.getElementById('nova-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+
+        const particleCount = 45;
+        const connectionDistance = 150;
+        const mouseDistance = 250;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
+        window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.size = Math.random() * 2 + 0.5;
+                // Updated colors to match theme (Purple/Pink/Cyan)
+                const colors = ['#a855f7', '#ec4899', '#22d3ee'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                if (mouse.x != null) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouseDistance) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const force = (mouseDistance - distance) / mouseDistance;
+                        this.vx += forceDirectionX * force * 0.5;
+                        this.vy += forceDirectionY * force * 0.5;
+                    }
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 0.6;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(168, 85, 247, ${(1 - distance / connectionDistance) * 0.2})`; // Purple lines
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+
+</html>
