@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Analyze - Blockchain Dashboard</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050a08;
+            --bg-secondary: #0a120e;
+            --bg-tertiary: #0d1a14;
+            --accent-green: #00ff88;
+            --accent-green-dim: #00cc6a;
+            --accent-green-glow: rgba(0, 255, 136, 0.3);
+            --text-primary: #e0ffe8;
+            --text-muted: #5a7a68;
+            --border-color: #1a3a2a;
+            --danger: #ff4757;
+            --warning: #ffa502;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Scanline effect */
+        .scanlines::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 136, 0.015) 2px,
+                    rgba(0, 255, 136, 0.015) 4px);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glow effects */
+        .glow-text {
+            text-shadow: 0 0 10px var(--accent-green-glow), 0 0 20px var(--accent-green-glow);
+        }
+
+        .glow-box {
+            box-shadow: 0 0 20px var(--accent-green-glow), inset 0 0 20px rgba(0, 255, 136, 0.05);
+        }
+
+        /* Landing screen */
+        #landing-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+        }
+
+        /* Blockchain animation */
+        .blockchain-container {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            perspective: 1000px;
+        }
+
+        .block {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+            border: 2px solid var(--accent-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            opacity: 0;
+            transform: translateX(-50px) rotateY(-20deg);
+            animation: blockAppear 0.5s ease forwards;
+        }
+
+        .block::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border: 1px solid var(--accent-green-dim);
+            opacity: 0.3;
+        }
+
+        .block-icon {
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--accent-green);
+            margin-bottom: 4px;
+        }
+
+        .block-hash {
+            font-size: 6px;
+            color: var(--accent-green);
+            text-align: center;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chain-link {
+            width: 40px;
+            height: 4px;
+            background: var(--accent-green);
+            position: relative;
+            opacity: 0;
+            animation: linkAppear 0.3s ease forwards;
+        }
+
+        .chain-link::before,
+        .chain-link::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 2px solid var(--accent-green);
+            background: var(--bg-primary);
+            top: -2px;
+            border-radius: 50%;
+        }
+
+        .chain-link::before {
+            left: -4px;
+        }
+
+        .chain-link::after {
+            right: -4px;
+        }
+
+        @keyframes blockAppear {
+            to {
+                opacity: 1;
+                transform: translateX(0) rotateY(0);
+            }
+        }
+
+        @keyframes linkAppear {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Loading text */
+        .loading-text {
+            margin-top: 60px;
+            font-size: 14px;
+            color: var(--accent-green);
+            letter-spacing: 4px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4) infinite;
+        }
+
+        @keyframes dots {
+            0% {
+                content: '';
+            }
+
+            25% {
+                content: '.';
+            }
+
+            50% {
+                content: '..';
+            }
+
+            75% {
+                content: '...';
+            }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-green);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 1px solid var(--accent-green-dim);
+            pointer-events: none;
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed var(--accent-green-dim);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 255, 136, 0.02);
+        }
+
+        .upload-zone:hover {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: var(--accent-green);
+        }
+
+        .upload-zone.drag-over {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: var(--accent-green);
+        }
+
+        /* Dashboard */
+        #dashboard {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #dashboard.active {
+            display: block;
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--accent-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-green);
+            transform: rotate(45deg);
+        }
+
+        /* Status cards */
+        .status-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-green);
+        }
+
+        .status-card:hover {
+            border-color: var(--accent-green-dim);
+            transform: translateY(-2px);
+        }
+
+        .status-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 18px;
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Terminal */
+        .terminal-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            position: relative;
+            margin-top: 30px;
+        }
+
+        .terminal-header {
+            background: var(--bg-tertiary);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .terminal-body {
+            padding: 25px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.8;
+            /* Adjusted for better line separation */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .terminal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-body::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: var(--accent-green-dim);
+        }
+
+        /* Line by Line Styles */
+        .t-line {
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .t-section-header {
+            color: var(--warning);
+            margin-top: 20px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .t-key {
+            color: #7dd3fc;
+        }
+
+        .t-value-string {
+            color: var(--accent-green);
+        }
+
+        .t-value-number {
+            color: #fbbf24;
+        }
+
+        .t-value-null {
+            color: var(--text-muted);
+        }
+
+        .t-bracket {
+            color: var(--text-muted);
+        }
+
+        /* Vote results */
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .candidate-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .candidate-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-green), transparent);
+        }
+
+        .candidate-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .vote-count {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--accent-green);
+            line-height: 1;
+        }
+
+        .vote-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Progress bar */
+        .vote-bar {
+            height: 6px;
+            background: var(--bg-tertiary);
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .vote-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-green-dim));
+            transition: width 1s ease;
+        }
+
+        /* Buttons */
+        .btn {
+            background: transparent;
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 12px 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-green);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .btn:hover {
+            color: var(--bg-primary);
+        }
+
+        .btn:hover::before {
+            left: 0;
+        }
+
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 20px var(--accent-green-glow);
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stagger-1 {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.3s;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.4s;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.5s;
+        }
+
+        /* Blinking cursor */
+        .cursor-blink::after {
+            content: '_';
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .block {
+                width: 60px;
+                height: 60px;
+            }
+
+            .block-icon {
+                width: 20px;
+                height: 20px;
+            }
+
+            .chain-link {
+                width: 25px;
+            }
+
+            .status-card {
+                padding: 15px;
+            }
+
+            .status-value {
+                font-size: 14px;
+            }
+
+            .terminal-body {
+                font-size: 10px;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Verification badge */
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--accent-green);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+    </style>
+</head>
+
+<body class="scanlines">
+    <div class="grid-bg"></div>
+
+    <!-- Landing Screen -->
+    <div id="landing-screen">
+        <div class="blockchain-container" id="blockchain-animation"></div>
+        <div class="loading-text">
+            <span class="cursor-blink">INITIALIZING BLOCK ANALYZE</span>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal-overlay" id="upload-modal">
+        <div class="modal-content">
+            <div class="text-center mb-6">
+                <h2 class="font-display text-xl text-[var(--accent-green)] tracking-wider mb-2">BLOCK ANALYZE</h2>
+                <p class="text-sm text-[var(--text-muted)]">Upload blockchain data file for analysis</p>
+            </div>
+
+            <div class="upload-zone" id="upload-zone">
+                <svg class="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="1" style="color: var(--accent-green)">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <p class="text-[var(--accent-green)] mb-2">Drop JSON file here</p>
+                <p class="text-xs text-[var(--text-muted)]">or click to browse</p>
+                <input type="file" id="file-input" accept=".json" class="hidden">
+            </div>
+
+            <div class="mt-4 text-center">
+                <p class="text-xs text-[var(--text-muted)]">Supported format: .json</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <header class="dashboard-header">
+            <div class="logo-section">
+                <div class="logo-icon"></div>
+                <div>
+                    <h1 class="font-display text-xl text-[var(--accent-green)] tracking-widest">BLOCK ANALYZE</h1>
+                    <p class="text-xs text-[var(--text-muted)] tracking-wider">BLOCKCHAIN VERIFICATION SYSTEM</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="verification-badge">
+                    <div class="pulse-dot"></div>
+                    <span>CHAIN VERIFIED</span>
+                </div>
+                <button class="btn" id="new-file-btn">UPLOAD NEW</button>
+            </div>
+        </header>
+
+        <!-- Status Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="status-cards">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <!-- Chain Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6" id="chain-stats">
+            <!-- Stats will be injected here -->
+        </div>
+
+        <!-- Terminal Display -->
+        <div class="terminal-container fade-in" style="animation-delay: 0.4s">
+            <div class="terminal-header">
+                <div class="terminal-title">
+                    <div class="terminal-dots">
+                        <div class="terminal-dot" style="background: #ff5f56;"></div>
+                        <div class="terminal-dot" style="background: #ffbd2e;"></div>
+                        <div class="terminal-dot" style="background: #27ca40;"></div>
+                    </div>
+                    <span class="text-sm text-[var(--text-muted)] ml-4">blockchain_data.json</span>
+                </div>
+                <span class="text-xs text-[var(--text-muted)]">READ-ONLY</span>
+            </div>
+            <div class="terminal-body" id="terminal-content">
+                <!-- JSON content will be injected here -->
+            </div>
+        </div>
+
+        <!-- Vote Results -->
+        <div class="results-section">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="font-display text-lg text-[var(--accent-green)] tracking-wider">VOTE TALLY</h2>
+                <span class="text-xs text-[var(--text-muted)]" id="total-votes">Total Votes: 0</span>
+            </div>
+            <div class="results-grid" id="results-grid">
+                <!-- Results will be injected here -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-[var(--border-color)] text-center">
+            <p class="text-xs text-[var(--text-muted)]">BLOCK ANALYZE v1.0 | Blockchain Verification System</p>
+        </footer>
+    </div>
+
+    <script>
+        // ============ State ============
+        let blockchainData = null;
+
+        // ============ DOM Elements ============
+        const landingScreen = document.getElementById('landing-screen');
+        const uploadModal = document.getElementById('upload-modal');
+        const dashboard = document.getElementById('dashboard');
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const newFileBtn = document.getElementById('new-file-btn');
+
+        // ============ Landing Animation ============
+        function createBlockchainAnimation() {
+            const container = document.getElementById('blockchain-animation');
+            container.innerHTML = '';
+
+            const blockCount = 5;
+
+            for (let i = 0; i < blockCount; i++) {
+                if (i > 0) {
+                    const link = document.createElement('div');
+                    link.className = 'chain-link';
+                    link.style.animationDelay = `${i * 0.15 + 0.3}s`;
+                    container.appendChild(link);
+                }
+
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.style.animationDelay = `${i * 0.15}s`;
+
+                const hash = generateFakeHash(8);
+                block.innerHTML = `
+          <div class="block-icon"></div>
+          <div class="block-hash">${hash}</div>
+        `;
+
+                container.appendChild(block);
+            }
+        }
+
+        function generateFakeHash(length) {
+            const chars = '0123456789abcdef';
+            let hash = '';
+            for (let i = 0; i < length; i++) {
+                hash += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return hash;
+        }
+
+        // ============ Modal Handling ============
+        function showUploadModal() {
+            uploadModal.classList.add('active');
+        }
+
+        function hideUploadModal() {
+            uploadModal.classList.remove('active');
+        }
+
+        function showDashboard() {
+            landingScreen.style.display = 'none';
+            dashboard.classList.add('active');
+        }
+
+        // ============ File Handling ============
+        function handleFile(file) {
+            if (!file || !file.name.endsWith('.json')) {
+                alert('Please upload a valid JSON file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    blockchainData = JSON.parse(e.target.result);
+                    hideUploadModal();
+                    showDashboard();
+                    renderDashboard();
+                } catch (err) {
+                    alert('Invalid JSON format. Please check your file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============ Dashboard Rendering ============
+        function renderDashboard() {
+            if (!blockchainData) return;
+
+            renderStatusCards();
+            renderChainStats();
+            renderTerminal();
+            renderVoteResults();
+        }
+
+        function renderStatusCards() {
+            const container = document.getElementById('status-cards');
+            const fields = [
+                { key: 'Election id', label: 'ELECTION ID' },
+                { key: 'Election Title', label: 'ELECTION TITLE' },
+                { key: 'booth no', label: 'BOOTH NO' },
+                { key: 'officer id', label: 'OFFICER ID' },
+                { key: 'date', label: 'DATE' }
+            ];
+
+            container.innerHTML = fields.map((field, index) => `
+        <div class="status-card fade-in stagger-${index + 1}" style="opacity: 0;">
+          <div class="status-label">${field.label}</div>
+          <div class="status-value">${blockchainData[field.key] || 'N/A'}</div>
+        </div>
+      `).join('');
+        }
+
+        function renderChainStats() {
+            const container = document.getElementById('chain-stats');
+            const voteCount = blockchainData.vote ? blockchainData.vote.length : 0;
+            const genesisHash = blockchainData.genesis ? blockchainData.genesis['current hash'] : 'N/A';
+
+            const stats = [
+                { label: 'TOTAL BLOCKS', value: voteCount + 1 },
+                { label: 'GENESIS HASH', value: genesisHash.substring(0, 16) + '...', highlight: true },
+                { label: 'TIMESTAMP', value: formatDate(blockchainData.timestamp) }
+            ];
+
+            container.innerHTML = stats.map((stat, index) => `
+        <div class="status-card fade-in" style="opacity: 0; animation-delay: ${0.3 + index * 0.1}s;">
+          <div class="status-label">${stat.label}</div>
+          <div class="status-value ${stat.highlight ? 'text-xs' : ''}">${stat.value}</div>
+        </div>
+      `).join('');
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        // ============ Terminal Rendering (Line by Line) ============
+        function renderTerminal() {
+            const container = document.getElementById('terminal-content');
+            let html = '';
+
+            // Helper to format a single value
+            const formatValue = (val) => {
+                if (val === null) return `<span class="t-value-null">null</span>`;
+                if (typeof val === 'number') return `<span class="t-value-number">${val}</span>`;
+                if (typeof val === 'string') return `<span class="t-value-string">"${escapeHTML(val)}"</span>`;
+                return val;
+            };
+
+            // Root fields
+            const rootFields = ['Election id', 'Election Title', 'booth no', 'officer id', 'date', 'timestamp'];
+
+            html += `<div class="t-section-header">:: ROOT DATA</div>`;
+            rootFields.forEach(key => {
+                if (blockchainData.hasOwnProperty(key)) {
+                    html += `<div class="t-line"><span class="t-key">${key}</span>: ${formatValue(blockchainData[key])}</div>`;
+                }
+            });
+
+            // Genesis Block
+            if (blockchainData.genesis) {
+                html += `<div class="t-section-header">:: GENESIS BLOCK</div>`;
+                const genesis = blockchainData.genesis;
+                Object.keys(genesis).forEach(key => {
+                    html += `<div class="t-line"><span class="t-key">${key}</span>: ${formatValue(genesis[key])}</div>`;
+                });
+            }
+
+            // Votes Array
+            if (blockchainData.vote && blockchainData.vote.length > 0) {
+                blockchainData.vote.forEach((voteBlock, index) => {
+                    html += `<div class="t-section-header">:: VOTE BLOCK #${index + 1}</div>`;
+                    Object.keys(voteBlock).forEach(key => {
+                        html += `<div class="t-line"><span class="t-key">${key}</span>: ${formatValue(voteBlock[key])}</div>`;
+                    });
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderVoteResults() {
+            const container = document.getElementById('results-grid');
+            const totalVotesEl = document.getElementById('total-votes');
+
+            if (!blockchainData.vote || blockchainData.vote.length === 0) {
+                container.innerHTML = '<p class="text-[var(--text-muted)]">No votes recorded.</p>';
+                totalVotesEl.textContent = 'Total Votes: 0';
+                return;
+            }
+
+            // Count votes per candidate
+            const voteCounts = {};
+            blockchainData.vote.forEach(vote => {
+                const name = vote['candidate name'] || 'Unknown';
+                voteCounts[name] = (voteCounts[name] || 0) + 1;
+            });
+
+            const totalVotes = blockchainData.vote.length;
+            totalVotesEl.textContent = `Total Votes: ${totalVotes}`;
+
+            // Sort by vote count
+            const sortedCandidates = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+            const maxVotes = sortedCandidates[0][1];
+
+            container.innerHTML = sortedCandidates.map(([name, count], index) => {
+                const percentage = Math.round((count / totalVotes) * 100);
+                const barWidth = Math.round((count / maxVotes) * 100);
+
+                return `
+          <div class="candidate-card fade-in" style="opacity: 0; animation-delay: ${0.5 + index * 0.1}s;">
+            <div class="candidate-name">${escapeHTML(name.toUpperCase())}</div>
+            <div class="vote-count glow-text">${count}</div>
+            <div class="vote-label">VOTES RECEIVED (${percentage}%)</div>
+            <div class="vote-bar">
+              <div class="vote-bar-fill" style="width: 0%;" data-width="${barWidth}"></div>
+            </div>
+          </div>
+        `;
+            }).join('');
+
+            // Animate bars
+            setTimeout(() => {
+                document.querySelectorAll('.vote-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width + '%';
+                });
+            }, 100);
+        }
+
+        // ============ Event Listeners ============
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        newFileBtn.addEventListener('click', () => {
+            showUploadModal();
+        });
+
+        // ============ Initialization ============
+        function init() {
+            createBlockchainAnimation();
+
+            // Show upload modal after animation
+            setTimeout(() => {
+                showUploadModal();
+            }, 2500);
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+
+</html>
